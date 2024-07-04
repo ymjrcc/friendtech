@@ -1,11 +1,70 @@
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import type { NextPage } from 'next';
 import Head from 'next/head';
-import styles from '../styles/Home.module.css';
+import { useReadContract, useWriteContract } from 'wagmi';
+import contractAbi from '../abi/friend-tech.json';
+import { useEffect, useState } from 'react';
+
 
 const Home: NextPage = () => {
+  const { data: hash, writeContract } = useWriteContract()
+  const [tokenId, setTokenId] = useState<number>(235660);
+  const [amount, setAmount] = useState<number>(2);
+  const [value, setValue] = useState<any>(null);
+
+  const { data: supply, refetch: totalSupplyRefetch } = useReadContract({
+    address: '0x201e95f275F39a5890C976Dc8A3E1b4Af114E635',
+    abi: contractAbi,
+    functionName: 'totalSupply',
+    args: [tokenId],
+  });
+
+  const { data: coefficients, refetch: coefficientsRefetch } = useReadContract({
+    address: '0x201e95f275F39a5890C976Dc8A3E1b4Af114E635',
+    abi: contractAbi,
+    functionName: 'coefficients',
+    args: [tokenId],
+  });
+
+  const { data: priceOut, refetch: priceOutRefetch } = useReadContract({
+    address: '0x201e95f275F39a5890C976Dc8A3E1b4Af114E635',
+    abi: contractAbi,
+    functionName: 'getPriceOut',
+    args: [supply, amount, coefficients],
+  });
+
+
+
+  const handleBuy = () => {
+    // buyToken（tokenId，maxTokensIn，keysOut，referral）
+    totalSupplyRefetch();
+    coefficientsRefetch();
+    priceOutRefetch();
+    console.log(supply);
+    console.log(coefficients);
+    console.log(priceOut);
+
+    const maxTokensIn = Number(priceOut) * 10;
+    
+    console.log([BigInt(tokenId), BigInt(maxTokensIn), BigInt(amount), BigInt(0)]);
+    
+    writeContract({
+      address: '0x201e95f275F39a5890C976Dc8A3E1b4Af114E635',
+      abi: contractAbi,
+      functionName: 'buyToken', 
+      args: [BigInt(tokenId), BigInt(maxTokensIn), BigInt(amount), BigInt(0)], 
+    })
+    console.log(1111);
+    
+  }
+
+  const handleSell = async () => {}
+
+  // if (isLoading) return <div>Loading...</div>;
+  // if (isError) return <div>Error fetching data</div>;
+
   return (
-    <div className={styles.container}>
+    <div>
       <Head>
         <title>RainbowKit App</title>
         <meta
@@ -15,7 +74,7 @@ const Home: NextPage = () => {
         <link href="/favicon.ico" rel="icon" />
       </Head>
 
-      <main className={styles.main}>
+      <main>
         <div className='flex p-4 bg-blue-100 justify-between'>
           <div className="text-3xl font-bold text-gray-700">Friend Tech Club Tool</div>
           <ConnectButton />
@@ -23,26 +82,26 @@ const Home: NextPage = () => {
         <div className="p-8">
           <div className='flex items-center mb-4'>
             <div className='w-20 mr-2'>Token ID:</div>
-            <input type="number" placeholder="Token ID" className="border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+            <input 
+              value={tokenId} onChange={(e) => setTokenId(parseInt(e.target.value))}
+              type="number" placeholder="Token ID" className="border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
           </div>
           <div className='flex items-center mb-4'>
             <div className='w-20 mr-2'>Amount:</div>
-            <input type="number" placeholder="Amount" className="border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+            <input 
+              value={amount} onChange={(e) => setAmount(parseInt(e.target.value))}
+              type="number" placeholder="Amount" className="border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
           </div>
           <div className='flex'>
-            <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-4">
+            <button onClick={handleBuy} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-4">
               Buy
             </button>
-            <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+            <button onClick={handleSell} className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
               Sell
             </button>
           </div>
         </div>
       </main>
-
-      <footer className={styles.footer}>
-
-      </footer>
     </div>
   );
 };
