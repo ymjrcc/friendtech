@@ -8,6 +8,8 @@ import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
 
 import { config } from '../wagmi';
 
+import '../styles/globals.css';
+
 const client = new QueryClient();
 
 function MyApp({ Component, pageProps }: AppProps) {
